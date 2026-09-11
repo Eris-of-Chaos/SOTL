@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Secrets of The Lover</title>
+</head>
+<body>
+    
+    <div id="start">
+        <div id="screen-text">Loading…</div>
+      <div id="screen-buttons"></div>
+   
+        <button class="hidden-letter" data letter="H" style="top:45px; left:105px;">H</button>
+        <button class="hidden-letter" data letter="E" style="top:130px; right:110px;">E</button>
+        <button class="hidden-letter" data letter="L" style="bottom:60px; left:130px;">L</button>
+        <button class="hidden-letter" data letter="P" style="bottom:90px; right:140px;">P</button>
+        <button class="hidden-letter" data letter="M" style="top:34px; left:115px;">M</button>
+        <button class="hidden-letter" data letter="E" style="bottom:69px; right:125px;">E</button>
+
+        <div id="letter-count">· · · · · ·</div> 
+        <div id="progress"><div id="progress-fill"></div></div>
+        <div id="toast"></div>
+
+        <div id="ending-overlay">
+        <h2 id="ending-title"></h2>
+        <p id="ending-text"></p>
+    </div>
+
+    <div id="start-screen">
+        <h1>William?</h1>
+        <button id="start-btn">yes?</button>
+    </div>
+
+    <script>
+        const NODES = {
+          q1: {
+            text: "Oh good, you are awake.",
+            answers: [
+              {label: "What?", next: "q3"},
+              {label: "█████████", next: "q2"}
+            ]
+          },
+          q2: {
+            text: "oh so you remember me.",
+            answers: [
+              {label:"of course I would.", next:"It_is_Seryn"},
+              {label:"Unfortunately.", next:"Hello_William"}
+            ]
+          },
+          q3: {
+            text:"oh... you've forgotten me.",
+            answers: [
+              {label:"who are you?", next:"Hello_William"},
+              {label:"Do I know you", next:"Hello_William"}
+            ]
+          },
+          //endings//
+          Hello_William: {
+            ending: true,
+            title:"Cold Heart",
+            text:"It's unfortunate you've forgotten me..."
+          },
+          It_is_Seryn:{
+            ending: true,
+            title: "Remember",
+            text: "I'm glad you haven't forgotten me william"
+          },
+          //secret//
+          ending_secret: {
+            ending: true,
+            title:"Do you feel guilt?",
+            text: "You've trapped me here... let me out. LET ME OUT!"
+          }
+        }
+
+/* */
+
+let currentNode;
+let lettersFound;
+const TOTAL = 3;
+
+function resetGame() {
+  currentNode = "q1";
+  lettersFound = [];
+  document.querySelectorAll(".hidden-letter").forEach(l => l.classList.remove("found"));
+  updateLetterCount();
+  const ov = document.getElementById("ending-overlay");
+  ov.classList.remove("show");
+  ov.style.opacity = "0";
+  document.getElementById("progress-fill").style.width = "0%";
+  render();
+}
+
+function render() {
+  const node = NODES[currentNode];
+
+  if (node.ending) {
+    showEnding(node);
+    return;
+  }
+
+  const textEl = document.getElementById("screen-text");
+  const btnEl = document.getElementById("screen-buttons");
+
+  const qNum = parseInt(currentNode.slice(1)) - 1;
+  document.getElementById("progress-fill").style.width = `${(qNum / TOTAL) * 100}%`;
+
+  textEl.style.opacity = "0";
+  setTimeout(() => {
+    textEl.textContent = node.text;
+    textEl.style.opacity = "1";
+
+    btnEl.innerHTML = "";
+    node.answers.forEach(a => {
+      const btn = document.createElement("button");
+      btn.className = "screen-btn";
+      btn.textContent = a.label;
+      btn.addEventListener("click", () => {
+        currentNode = a.next;
+        render();
+      });
+      btnEl.appendChild(btn);
+    });
+  }, 400);
+}
+
+function showEnding(node) {
+  const ov = document.getElementById("ending-overlay");
+  document.getElementById("ending-title").textContent = node.title;
+  document.getElementById("ending-text").textContent = node.text;
+  document.getElementById("progress-fill").style.width = "100%";
+
+  setTimeout(() => {
+    ov.classList.add("show");
+    requestAnimationFrame(() => { ov.style.opacity = "1"; });
+  }, 600);
+}
+
+// ═══════════════════════════════════════════════════════
+//  HIDDEN LETTERS
+// ═══════════════════════════════════════════════════════
+
+document.querySelectorAll(".hidden-letter").forEach(el => {
+  el.addEventListener("click", () => {
+    if (el.classList.contains("found")) return;
+    el.classList.add("found");
+
+    lettersFound.push(el.dataset.letter);
+    updateLetterCount();
+    showToast(`found: "${el.dataset.letter}"  (${lettersFound.length}/6)`);
+
+    if (lettersFound.length === 6) {
+      setTimeout(() => {
+        currentNode = "ending_secret";
+        render();
+      }, 800);
+    }
+  });
+});
+
+function updateLetterCount() {
+  const dots = "· · · · · ·".split(" ");
+  const slots = ["H","E","L","P","M","E"];
+  const display = slots.map(s =>
+    lettersFound.includes(s) ? s : "·"
+  ).join(" ");
+  document.getElementById("letter-count").textContent = display;
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════════
+
+document.getElementById("start-btn").addEventListener("click", () => {
+  document.getElementById("start-screen").style.display = "none";
+  resetGame();
+});
+    </script>
+</body>
+</html>
