@@ -1,0 +1,112 @@
+ body {
+    background: #0a0a0a;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  #screen {
+    position: absolute; inset:8px; background:#000; border-radius:2px;
+    padding:16px; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; overflow:hidden;
+  }
+  #screen-text {
+    font-size:12px; line-height:1.8; color:#aaa;
+    text-align:center; max-height:120px; overflow:hidden;
+    transition: opacity 0.4s;
+  }
+  #screen-buttons { margin-top:14px; display:flex; gap:16px; }
+  .screen-btn {
+    padding:6px 20px; font-family:inherit; font-size:11px;
+    background:transparent; color:#888; border:1px solid #444;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .screen-btn:hover { color:#fff; border-color:#888; background:rgba(255,255,255,0.03); }
+
+  /* ── HIDDEN LETTERS ───────────────────────────────── */
+  .hidden-letter {
+    position: absolute;
+    background: transparent;
+    border: none;
+    cursor: default;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    color: transparent;
+    transition: color 0.4s, text-shadow 0.4s;
+    z-index: 5;
+  }
+  .hidden-letter:hover {
+    color: rgba(255,255,255,0.12);
+    text-shadow: 0 0 6px rgba(255,255,255,0.06);
+  }
+  .hidden-letter.found {
+    color: rgba(255,255,255,0.25);
+    text-shadow: 0 0 8px rgba(255,255,255,0.1);
+    pointer-events: none;
+  }
+
+  /* Scanlines */
+  #room::after {
+    content:''; position:absolute; inset:0;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events:none; z-index: 1;
+  }
+
+  /* Ending overlay */
+  #ending-overlay {
+    position:absolute; inset:0; background:#000;
+    display:none; align-items:center; justify-content:center;
+    flex-direction:column; z-index:10; opacity:0; transition:opacity 2s;
+  }
+  #ending-overlay.show { display:flex; opacity:1; }
+  #ending-overlay h2 { font-size:18px; color:#888; margin-bottom:20px; font-weight:normal; }
+  #ending-overlay p  { font-size:13px; color:#666; max-width:420px; line-height:1.8; text-align:center; }
+  #restart-btn {
+    margin-top:32px; padding:8px 24px; font-family:inherit; font-size:11px;
+    background:transparent; color:#555; border:1px solid #333; cursor:pointer;
+  }
+  #restart-btn:hover { color:#999; border-color:#666; }
+
+  /* Start screen */
+  #start-screen {
+    position:absolute; inset:0; background:#000;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; z-index:20;
+  }
+  #start-screen h1 { font-size:16px; color:#666; font-weight:normal; margin-bottom:30px; }
+  #start-btn {
+    padding:10px 32px; font-family:inherit; font-size:12px;
+    background:transparent; color:#777; border:1px solid #444;
+    cursor:pointer; transition:all 0.3s;
+  }
+  #start-btn:hover { color:#ccc; border-color:#888; }
+
+  /* Progress */
+  #progress {
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    width:200px; height:2px; background:#1a1a1a; border-radius:1px; z-index:5;
+  }
+  #progress-fill {
+    height:100%; width:0%; background:#444; border-radius:1px;
+    transition: width 0.5s;
+  }
+
+  /* Toast */
+  #toast {
+    position:absolute; top:30px; left:50%;
+    transform:translateX(-50%) translateY(-40px);
+    font-size:11px; color:#555;
+    transition: transform 0.5s, opacity 0.5s;
+    opacity:0; pointer-events:none; z-index:15;
+  }
+  #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  /* Letter counter (very subtle) */
+  #letter-count {
+    position:absolute; top:12px; right:16px;
+    font-size:9px; color:#2a2a2a; z-index:5;
+    letter-spacing: 2px;
+  }
