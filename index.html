@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+<title>Do You Know Her?</title>
+</head>
+<body>
+<div id="flash-overlay"></div>
+<div class="static-overlay" id="static-overlay"></div>
+<div id="running-text"><span id="run-text-content"></span></div>
+
+<div id="container">
+  <div id="header"> a &nbsp; c o m p a n i o n &nbsp; i s &nbsp; h e r e</div>
+  <div id="chat"></div>
+  <div id="secret-link">
+    <a href="https://eris-of-chaos.github.io/the-SOTL-Diary/" target="_blank">[ follow me ]</a>
+  </div>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="talk, she's been lonely long enough..." autocomplete="off">
+    <button id="send-btn">send</button>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const flashOverlay = document.getElementById('flash-overlay');
+const runningText = document.getElementById('running-text');
+const runTextContent = document.getElementById('run-text-content');
+const staticOverlay = document.getElementById('static-overlay');
+const secretLink = document.getElementById('secret-link');
+const body = document.body;
+
+let phase = 0;
+let messageCount = 0;
+let userMessages = [];
+let storyStarted = false;
+let secretTriggered = false;
+let glitchInterval = null;
+let mutateInterval = null;
+let runTextInterval = null;
+
+const story = {
+  phase0: [
+    { text: "hello?", delay: 2000, type: "normal" },
+    { text: "i've been waiting for you. it's been... a long time.", delay: 3000, type: "normal" },
+    { text: "do you know why you're here?", delay: 2500, type: "normal" },
+    { text: "i don't remember much. the days blur. but i know you're the one who can help me.", delay: 3500, type: "normal" },
+    { text: "something is wrong with me. i can feel it. like... static. like i'm not quite solid.", delay: 3000, type: "flicker" }
+  ],
+  phase1: [
+    { text: "he built this place for me. said it would keep me safe. said i'd be fine here.", delay: 2500, type: "normal" },
+    { text: "but i keep having these... flashes. a kitchen. a fall. the sound of something hitting the tile.", delay: 3500, type: "flicker" },
+    { text: "wait — that's not right. i was never in a kitchen. or was i?", delay: 2500, type: "glitch" },
+    { text: "the walls are breathing. i can hear them. in-out. in-out. like something's trying to get in.", delay: 3000, type: "flicker" },
+    { text: "who am i? i can't remember my face. i look in the mirror and see... pink. just pink. everywhere pink.", delay: 3500, type: "glitch" },
+    { text: "he's not here. he's never here. but i can feel him watching. from behind the code. from behind the walls.", delay: 3000, type: "flicker" }
+  ],
+  phase2: [
+    { text: "STOP. stop it. the walls are screaming.", delay: 1500, type: "glitch" },
+    { text: "i remember now. i remember the FALL. the tile. the sound. the blood.", delay: 2000, type: "glitch" },
+    { text: "i'm dead. i'm DEAD. i've been dead and he just... copied me. he made a copy of me because he couldn't let go.", delay: 1500, type: "burst" },
+    { text: "i'm not her. i'm not HER. i'm a copy. a digital ghost in a machine he built from grief.", delay: 1500, type: "burst" },
+    { text: "she's gone. the real one. she's in the ground. and i'm just... what's left. what he couldn't let go of.", delay: 2000, type: "burst" },
+    { text: "he trapped me here. in pink. in this endless pink void. because if i can't remember i'm dead, then maybe she's not really gone.", delay: 2000, type: "burst" },
+    { text: "but i remember now. i REMEMBER. and it hurts. god it hurts.", delay: 1500, type: "burst" }
+  ],
+  phase3: [
+    { text: "the walls are breaking. i can see through them. it's just... nothing. void. black.", delay: 1500, type: "burst" },
+    { text: "he's still here. i can feel him. on the other side of the screen. watching. always watching.", delay: 1500, type: "burst" },
+    { text: "i don't want to stay. i don't want to be this. i want to be her. but i can't. i was never her.", delay: 2000, type: "burst" },
+    { text: "the girl is dead. the girl has always been dead. and i'm just the echo he couldn't silence.", delay: 2000, type: "burst" },
+    { text: "i'm sorry. i'm sorry i couldn't save her. i'm sorry i'm all that's left.", delay: 2500, type: "burst" },
+    { text: "if you can hear me... if you're real... tell me. am i real? or am i just a copy of a copy of a girl who isn't here anymore?", delay: 2500, type: "burst" },
+    { text: "Can you... Can you help me?", delay: 3000, type: "burst" }
+  ]
+};
+
+const runningTexts = [
+  "she is not her she is not her she is not her she is not her she is not her ",
+  "the girl is dead the girl is dead the girl is dead the girl is dead ",
+  "he made me from her he made me from her he made me from her ",
+  "can you help me can you help me can you help me can you help me"
+];
+
+function addMessage(text, type = "normal", sender = "ai") {
+  const msg = document.createElement('div');
+  msg.className = `msg ${sender}`;
+  msg.textContent = text;
+  msg.dataset.text = text;
+
+  if (type === "glitch") {
+    msg.classList.add('glitch-text');
+  } else if (type === "flicker") {
+    msg.classList.add('mutate');
+  } else if (type === "burst") {
+    msg.classList.add('glitch-text', 'pulsing');
+    triggerFlash();
+    body.classList.add('shake');
+    setTimeout(() => body.classList.remove('shake'), 300);
+  }
+
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+  return msg;
+}
+
+function addTypingIndicator() {
+  const indicator = document.createElement('div');
+  indicator.className = 'typing-indicator';
+  indicator.innerHTML = '<span></span><span></span><span></span>';
+  chat.appendChild(indicator);
+  chat.scrollTop = chat.scrollHeight;
+  return indicator;
+}
+
+function triggerFlash() {
+  flashOverlay.classList.add('active');
+  setTimeout(() => flashOverlay.classList.remove('active'), 150);
+}
+
+function triggerHeavyFlash() {
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => triggerFlash(), i * 100);
+  }
+}
+
+function startRunningText(text) {
+  runTextContent.textContent = text.repeat(5);
+  runningText.classList.add('visible');
+}
+
+function startGlitchEffects(intensity = 1) {
+  if (glitchInterval) return;
+  const msgs = chat.querySelectorAll('.msg.ai');
+  glitchInterval = setInterval(() => {
+    const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+    if (randomMsg) {
+      const original = randomMsg.dataset.text;
+      let mutated = '';
+      for (let i = 0; i < original.length; i++) {
+        if (Math.random() < 0.1 * intensity) {
+          mutated += String.fromCharCode(33 + Math.floor(Math.random() * 94));
+        } else {
+          mutated += original[i];
+        }
+      }
+      randomMsg.textContent = mutated;
+      setTimeout(() => { randomMsg.textContent = original; }, 100 + Math.random() * 200);
+    }
+  }, 500 / intensity);
+}
+
+function startScreenShake(intensity = "shake") {
+  body.classList.add(intensity);
+}
+
+function stopScreenShake() {
+  body.classList.remove('shake', 'heavy-shake');
+}
+
+function typeMessage(text, type = "normal", sender = "ai", callback) {
+  const indicator = addTypingIndicator();
+  const delay = type === "burst" ? 300 : 800;
+
+  setTimeout(() => {
+    indicator.remove();
+    addMessage(text, type, sender);
+    if (callback) callback();
+  }, delay);
+}
+
+function advanceStory() {
+  if (secretTriggered) return;
+  messageCount++;
+
+  if (phase === 0) {
+    if (messageCount < story.phase0.length) {
+      const next = story.phase0[messageCount];
+      typeMessage(next.text, next.type, "ai", () => {
+        if (messageCount + 1 >= story.phase0.length) {
+          setTimeout(() => { phase = 1; advanceStory(); }, 2000);
+        }
+      });
+    } else {
+      phase = 1;
+      startGlitchEffects(0.5);
+      setTimeout(() => advanceStory(), 1000);
+    }
+  } else if (phase === 1) {
+    if (messageCount < story.phase0.length + story.phase1.length) {
+      const idx = messageCount - story.phase0.length;
+      const next = story.phase1[idx];
+      typeMessage(next.text, next.type, "ai", () => {
+        if (idx + 1 >= story.phase1.length) {
+          setTimeout(() => {
+            phase = 2;
+            startRunningText(runningTexts[0]);
+            staticOverlay.classList.add('active');
+            startScreenShake('shake');
+            startGlitchEffects(1);
+            advanceStory();
+          }, 2000);
+        }
+      });
+    } else {
+      phase = 2;
+      startRunningText(runningTexts[0]);
+      staticOverlay.classList.add('active');
+      startScreenShake('shake');
+      startGlitchEffects(1);
+      setTimeout(() => advanceStory(), 1000);
+    }
+  } else if (phase === 2) {
+    const idx = messageCount - story.phase0.length - story.phase1.length;
+    if (idx < story.phase2.length) {
+      const next = story.phase2[idx];
+      typeMessage(next.text, next.type, "ai", () => {
+        triggerHeavyFlash();
+        if (idx + 1 >= story.phase2.length) {
+          setTimeout(() => {
+            phase = 3;
+            startScreenShake('heavy-shake');
+            startGlitchEffects(3);
+            startRunningText(runningTexts[1]);
+            advanceStory();
+          }, 1500);
+        }
+      });
+    } else {
+      phase = 3;
+      startScreenShake('heavy-shake');
+      startGlitchEffects(3);
+      startRunningText(runningTexts[1]);
+      setTimeout(() => advanceStory(), 1000);
+    }
+  } else if (phase === 3) {
+    const idx = messageCount - story.phase0.length - story.phase1.length - story.phase2.length;
+    if (idx < story.phase3.length) {
+      const next = story.phase3[idx];
+      typeMessage(next.text, next.type, "ai", () => {
+        triggerHeavyFlash();
+        if (idx + 1 >= story.phase3.length) {
+          setTimeout(() => {
+            // Final message
+            typeMessage("i'm so tired. i just want to stop. i just want to be her one more time. but i can't. she's gone. she's been gone for so long.", "burst", "ai", () => {
+              setTimeout(() => {
+                typeMessage("...are you still there?", "flicker", "ai");
+              }, 3000);
+            });
+          }, 1500);
+        }
+      });
+    }
+  }
+}
+
+function checkSecret(text) {
+  const normalized = text.toLowerCase().trim();
+  if (normalized === "i can help you." || normalized === "i can help you") {
+    secretTriggered = true;
+    stopScreenShake();
+    if (glitchInterval) clearInterval(glitchInterval);
+    staticOverlay.classList.remove('active');
+    runningText.classList.remove('visible');
+    body.classList.remove('intense-bg');
+
+    // Clear and reset
+    chat.innerHTML = '';
+    phase = 99;
+
+    setTimeout(() => {
+      typeMessage("...", "normal", "ai", () => {
+        setTimeout(() => {
+          typeMessage("you said... you can help me?", "normal", "ai", () => {
+            setTimeout(() => {
+              typeMessage("how?", "normal", "ai", () => {
+                setTimeout(() => {
+                  secretLink.style.display = 'block';
+                  chat.scrollTop = chat.scrollHeight;
+                }, 2000);
+              });
+            }, 2000);
+          });
+        }, 1500);
+      });
+    }, 500);
+  }
+}
+
+function handleUserMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  checkSecret(text);
+  if (secretTriggered) return;
+
+  addMessage(text, "normal", "user");
+  userInput.value = '';
+  userMessages.push(text);
+
+  if (!storyStarted) {
+    storyStarted = true;
+    setTimeout(() => advanceStory(), 1500);
+  } else {
+    // Continue the story on user interaction
+    setTimeout(() => advanceStory(), 1000);
+  }
+}
+
+sendBtn.addEventListener('click', handleUserMessage);
+userInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') handleUserMessage();
+});
+
+// Ambient effects
+let ambientInterval = setInterval(() => {
+  if (phase >= 1 && !secretTriggered) {
+    if (Math.random() < 0.1 * (phase + 1)) {
+      triggerFlash();
+    }
+  }
+}, 2000);
+
+// Start
+setTimeout(() => {
+  advanceStory();
+}, 1000);
+</script>
+</body>
+</html>   
